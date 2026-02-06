@@ -4,6 +4,7 @@ from inspect import getsource
 from utils.download import download
 from utils import get_logger
 import scraper
+from scraper import Data 
 import time
 
 
@@ -16,12 +17,20 @@ class Worker(Thread):
         assert {getsource(scraper).find(req) for req in {"from requests import", "import requests"}} == {-1}, "Do not use requests in scraper.py"
         assert {getsource(scraper).find(req) for req in {"from urllib.request import", "import urllib.request"}} == {-1}, "Do not use urllib.request in scraper.py"
         super().__init__(daemon=True)
-        
+
+  
     def run(self):
         while True:
             tbd_url = self.frontier.get_tbd_url()
             if not tbd_url:
                 self.logger.info("Frontier is empty. Stopping Crawler.")
+                print("Number of unique pages: ", Data.totalPages)
+                print("The longest page: ", Data.longestPage)
+                print("Most common 50 words:", Data.wordFrequency.most_common(50))
+                print("Subdomains: ", sorted(Data.subdomain_freq.items()))
+                with open("urls.txt", "w") as f:
+                    for url in Data.URList:
+                        f.write(url + "\n")
                 break
             resp = download(tbd_url, self.config, self.logger)
             self.logger.info(
